@@ -1,31 +1,29 @@
+// main.go
 package main
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
+	"htmx-go-todolist/internal/types"
+	"htmx-go-todolist/view"
 	"htmx-go-todolist/view/components/todo"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
-	"htmx-go-todolist/internal/types" // Your module path
-	"htmx-go-todolist/view"           // Your module path
-
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var logger *log.Logger // Declare a global logger
+var logger *log.Logger
 
 func main() {
-	// Initialize the logger
-	logger = log.New(os.Stdout, "DEBUG: ", log.Ldate|log.Ltime|log.Lshortfile)
+	logger = log.New(os.Stdout, "DEBUG: ", log.Ldate|log.Lshortfile)
 
-	// Database Setup
 	db, err := sql.Open("sqlite3", "file:./todos.db?_foreign_keys=on&_journal_mode=WAL")
 	if err != nil {
-		logger.Fatalf("Failed to open database: %v", err) // Use logger.Fatalf
+		logger.Fatalf("Failed to open database: %v", err)
 	}
 	defer db.Close()
 
@@ -41,30 +39,27 @@ func main() {
 	`
 	_, err = db.Exec(createTableSQL)
 	if err != nil {
-		logger.Fatalf("Failed to create table: %v", err) // Use logger.Fatalf
+		logger.Fatalf("Failed to create table: %v", err)
 	}
 
 	mux := http.NewServeMux()
 
-	// Load todos on startup
-	todos, err := loadTodos(db)
-	if err != nil {
-		logger.Fatalf("Failed to load todos on startup: %v", err) // Use logger.Fatalf
-	}
-
+	// GET / - Initial Page Load
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
-		logger.Println("GET / request received") // Log the request
-		todos, err = loadTodos(db)
+		logger.Println("GET / request received")
+		todos, err := loadTodos(db)
 		if err != nil {
-			logger.Printf("Error loading todos: %v\n", err) // Use logger.Printf
+			logger.Printf("Error loading todos: %v\n", err)
 			http.Error(w, "Failed to load todos", http.StatusInternalServerError)
 			return
 		}
-		view.Index(todos).Render(context.Background(), w)
+		activeFilter := "all"
+		view.Index(todos, activeFilter).Render(context.Background(), w) // Correct
 	})
 
+	// POST /add-todo - Add a New Todo
 	mux.HandleFunc("POST /add-todo", func(w http.ResponseWriter, r *http.Request) {
-		logger.Println("POST /add-todo request received") // Log the request
+		logger.Println("POST /add-todo request received")
 		if err := r.ParseForm(); err != nil {
 			logger.Printf("Error parsing form: %v\n", err)
 			http.Error(w, "Failed to parse form", http.StatusBadRequest)
@@ -79,7 +74,7 @@ func main() {
 			Category:  r.FormValue("category"),
 			Completed: false,
 		}
-		logger.Printf("Adding new todo: %+v\n", newTodo) // Log the new todo
+		logger.Printf("Adding new todo: %+v\n", newTodo)
 
 		err := insertTodo(db, newTodo)
 		if err != nil {
@@ -88,10 +83,10 @@ func main() {
 			return
 		}
 
-		todos = append([]types.Todo{newTodo}, todos...) // keep in memory for now
 		todo.Item(newTodo).Render(context.Background(), w)
 	})
 
+	// POST /toggle-todo/{id} - Toggle Todo Completion
 	mux.HandleFunc("POST /toggle-todo/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		logger.Printf("POST /toggle-todo request received for ID: %s\n", id)
@@ -115,20 +110,14 @@ func main() {
 			return
 		}
 
-		//  Update the todo IN-MEMORY.
-		for i := range todos {
-			if todos[i].ID == id {
-				todos[i] = updatedTodo // Replace the old todo with the updated one.
-				break
-			}
-		}
 		logger.Printf("Toggled todo: %+v\n", updatedTodo)
 		todo.Item(updatedTodo).Render(context.Background(), w)
 	})
 
+	// DELETE /delete-todo/{id} - Delete Todo
 	mux.HandleFunc("DELETE /delete-todo/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
-		logger.Printf("DELETE /delete-todo request received for ID: %s\n", id) // log id
+		logger.Printf("DELETE /delete-todo request received for ID: %s\n", id)
 		if id == "" {
 			logger.Println("Error: ID is required")
 			http.Error(w, "ID is required", http.StatusBadRequest)
@@ -142,15 +131,28 @@ func main() {
 			return
 		}
 
-		// Remove from IN-MEMORY slice.
-		for i := range todos {
-			if todos[i].ID == id {
-				todos = append(todos[:i], todos[i+1:]...)
-				break
-			}
+		w.WriteHeader(http.StatusOK)
+	})
+
+	// GET /todos - Filter Todos (HTMX Request)
+	mux.HandleFunc("GET /todos", func(w http.ResponseWriter, r *http.Request) {
+		logger.Println("GET /todos request received")
+
+		filter := r.URL.Query().Get("filter")
+		if filter == "" {
+			filter = "all" // Default filter
+		}
+		logger.Printf("Filter applied: %s\n", filter)
+
+		filteredTodos, err := getFilteredTodos(db, filter)
+		if err != nil {
+			logger.Printf("Error filtering todos: %v", err)
+			http.Error(w, "Failed to filter todos", http.StatusInternalServerError)
+			return
 		}
 
-		w.WriteHeader(http.StatusOK)
+		// *** RENDER ONLY THE CONTAINER COMPONENT ***
+		todo.Container(filteredTodos, filter).Render(context.Background(), w) // Correct
 	})
 
 	server := &http.Server{
@@ -158,27 +160,28 @@ func main() {
 		Handler: mux,
 	}
 
-	logger.Printf("Server starting on %s\n", server.Addr) // log server
-	log.Fatal(server.ListenAndServe())                    //  use standard log.Fatal
+	logger.Printf("Server starting on %s\n", server.Addr)
+	log.Fatal(server.ListenAndServe())
 }
 
 // --- Database Helper Functions ---
 
 func insertTodo(db *sql.DB, todo types.Todo) error {
-	logger.Printf("Inserting todo into database: %+v\n", todo) // Log before insert
+	logger.Printf("Inserting todo into database: %+v\n", todo)
 	_, err := db.Exec("INSERT INTO todos (id, text, completed, created_at, priority, category) VALUES (?, ?, ?, ?, ?, ?)",
 		todo.ID, todo.Text, todo.Completed, todo.CreatedAt, todo.Priority, todo.Category)
 	if err != nil {
-		logger.Printf("Error inserting todo: %v\n", err) // log on error
+		logger.Printf("Error inserting todo: %v\n", err)
+		return err
 	}
-	return err
+	return nil
 }
 
 func loadTodos(db *sql.DB) ([]types.Todo, error) {
 	logger.Println("Loading todos from database")
 	rows, err := db.Query("SELECT id, text, completed, created_at, priority, category FROM todos ORDER BY created_at DESC")
 	if err != nil {
-		logger.Printf("Query Error: %v\n", err) // Log the error.
+		logger.Printf("Query Error: %v\n", err)
 		return nil, err
 	}
 	defer rows.Close()
@@ -189,18 +192,18 @@ func loadTodos(db *sql.DB) ([]types.Todo, error) {
 		var completed int
 		err := rows.Scan(&todo.ID, &todo.Text, &completed, &todo.CreatedAt, &todo.Priority, &todo.Category)
 		if err != nil {
-			logger.Printf("Scan Error: %v\n", err) // Log the error
+			logger.Printf("Scan Error: %v\n", err)
 			return nil, err
 		}
 		todo.Completed = completed != 0
 		todos = append(todos, todo)
 	}
-	if err = rows.Err(); err != nil { // Check for errors during iteration
+	if err = rows.Err(); err != nil {
 		logger.Printf("Iteration error: %v\n", err)
 		return nil, err
 	}
 
-	logger.Printf("Loaded %d todos from database\n", len(todos)) // logitud
+	logger.Printf("Loaded %d todos from database\n", len(todos))
 	return todos, nil
 }
 
@@ -208,38 +211,82 @@ func toggleTodoCompletion(db *sql.DB, id string) error {
 	logger.Printf("Toggling completion for todo ID: %s\n", id)
 	_, err := db.Exec("UPDATE todos SET completed = NOT completed WHERE id = ?", id)
 	if err != nil {
-		logger.Printf("Error toggling todo: %v\n", err) // log on error
+		logger.Printf("Error toggling todo: %v\n", err)
+		return err
 	}
-	return err
+	return nil
 }
 
 func deleteTodo(db *sql.DB, id string) error {
-	logger.Printf("Deleting todo ID: %s\n", id) // logitud
+	logger.Printf("Deleting todo ID: %s\n", id)
 	_, err := db.Exec("DELETE FROM todos WHERE id = ?", id)
 	if err != nil {
-		logger.Printf("Error deleting todo: %v\n", err) // log on error
+		logger.Printf("Error deleting todo: %v\n", err)
+		return err
 	}
-	return err
+	return nil
 }
 
 func getTodoByID(db *sql.DB, id string) (types.Todo, error) {
-	logger.Printf("Retrieving todo by ID: %s\n", id) // log
+	logger.Printf("Retrieving todo by ID: %s\n", id)
 	row := db.QueryRow("SELECT id, text, completed, created_at, priority, category FROM todos WHERE id = ?", id)
 
 	var todo types.Todo
 	var completed int
 	err := row.Scan(&todo.ID, &todo.Text, &completed, &todo.CreatedAt, &todo.Priority, &todo.Category)
 	if err != nil {
-		logger.Printf("Error retrieving todo by ID %v\n", err) // log error
+		logger.Printf("Error retrieving todo by ID %v\n", err)
 		return types.Todo{}, err
 	}
 	todo.Completed = completed != 0
-	logger.Printf("Retrieved Todo: %+v\n", todo) // Log the todo.
+	logger.Printf("Retrieved Todo: %+v\n", todo)
 	return todo, nil
 }
 
 func generateTodoID() string {
 	id := fmt.Sprintf("%d", time.Now().UnixNano())
-	logger.Printf("Generated new Todo ID: %v\n", id) // Log ID.
+	logger.Printf("Generated new Todo ID: %v\n", id)
 	return id
+}
+
+func getFilteredTodos(db *sql.DB, filter string) ([]types.Todo, error) {
+	logger.Printf("Retrieving todos with filter: %s\n", filter)
+
+	var rows *sql.Rows
+	var err error
+
+	switch filter {
+	case "active":
+		rows, err = db.Query("SELECT id, text, completed, created_at, priority, category FROM todos WHERE completed = 0 ORDER BY created_at DESC")
+	case "completed":
+		rows, err = db.Query("SELECT id, text, completed, created_at, priority, category FROM todos WHERE completed = 1 ORDER BY created_at DESC")
+	default: // "all" or any other value
+		rows, err = db.Query("SELECT id, text, completed, created_at, priority, category FROM todos ORDER BY created_at DESC")
+	}
+
+	if err != nil {
+		logger.Printf("Error querying database for filtered todos: %v\n", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var todos []types.Todo
+	for rows.Next() {
+		var todo types.Todo
+		var completed int
+		if err := rows.Scan(&todo.ID, &todo.Text, &completed, &todo.CreatedAt, &todo.Priority, &todo.Category); err != nil {
+			logger.Printf("Error scanning row: %v\n", err)
+			return nil, err
+		}
+		todo.Completed = completed != 0
+		todos = append(todos, todo)
+	}
+
+	if err = rows.Err(); err != nil {
+		logger.Printf("Error during row iteration: %v\n", err)
+		return nil, err
+	}
+
+	logger.Printf("Retrieved %d todos with filter: %s\n", len(todos), filter)
+	return todos, nil
 }
