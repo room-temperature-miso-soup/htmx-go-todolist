@@ -2,7 +2,7 @@
 package todo
 
 templ Form() {
-	<form hx-post="/add-todo" hx-target="#todo-list" hx-swap="beforebegin" class="mb-6">
+	<form hx-post="/add-todo" hx-target="#todo-list" hx-swap="innerHTML" class="mb-6">
 		<div class="join w-full">
 			<input
 				type="text"

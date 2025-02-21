@@ -31,7 +31,7 @@ func Form() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form hx-post=\"/add-todo\" hx-target=\"#todo-list\" hx-swap=\"beforebegin\" class=\"mb-6\"><div class=\"join w-full\"><input type=\"text\" placeholder=\"Add a new task...\" class=\"input input-bordered join-item w-full\" name=\"todoText\" required> <button type=\"submit\" class=\"btn btn-primary join-item\">Add</button></div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form hx-post=\"/add-todo\" hx-target=\"#todo-list\" hx-swap=\"innerHTML\" class=\"mb-6\"><div class=\"join w-full\"><input type=\"text\" placeholder=\"Add a new task...\" class=\"input input-bordered join-item w-full\" name=\"todoText\" required> <button type=\"submit\" class=\"btn btn-primary join-item\">Add</button></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

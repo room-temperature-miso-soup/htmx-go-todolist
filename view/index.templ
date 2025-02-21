@@ -20,9 +20,10 @@ templ Index(todos []types.Todo, activeFilter string) {
 			</div>
 
 			<div class="max-w-3xl">
-				@todo.Form()
-				<div id="todo-list"> //  <-- id="todo-list" is back here
-					@todo.Container(todos, activeFilter)
+        @todo.Form() // Include the Form component here
+        @todo.Filters(activeFilter)
+      <div id="todo-list">
+          @todo.List(todos)
 				</div>
 			</div>
 		</div>

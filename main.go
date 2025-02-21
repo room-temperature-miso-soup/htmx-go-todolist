@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"htmx-go-todolist/internal/types"
 	"htmx-go-todolist/view"
-	"htmx-go-todolist/view/components/todo"
+	"htmx-go-todolist/view/components/todo" // Import the todo components package
 	"log"
 	"net/http"
 	"os"
@@ -54,7 +54,7 @@ func main() {
 			return
 		}
 		activeFilter := "all"
-		view.Index(todos, activeFilter).Render(context.Background(), w) // Correct
+		view.Index(todos, activeFilter).Render(context.Background(), w)
 	})
 
 	// POST /add-todo - Add a New Todo
@@ -83,7 +83,14 @@ func main() {
 			return
 		}
 
-		todo.Item(newTodo).Render(context.Background(), w)
+		// After adding a todo, re-fetch all todos to update the list
+		todos, err := loadTodos(db) // Or getFilteredTodos with current filter if you maintain filter state
+		if err != nil {
+			logger.Printf("Error reloading todos after add: %v\n", err)
+			http.Error(w, "Failed to reload todos", http.StatusInternalServerError)
+			return
+		}
+		todo.List(todos).Render(context.Background(), w) // Render only the todo list to update the UI
 	})
 
 	// POST /toggle-todo/{id} - Toggle Todo Completion
@@ -111,7 +118,7 @@ func main() {
 		}
 
 		logger.Printf("Toggled todo: %+v\n", updatedTodo)
-		todo.Item(updatedTodo).Render(context.Background(), w)
+		todo.Item(updatedTodo).Render(context.Background(), w) // Render just the updated item
 	})
 
 	// DELETE /delete-todo/{id} - Delete Todo
@@ -132,6 +139,15 @@ func main() {
 		}
 
 		w.WriteHeader(http.StatusOK)
+
+		// After deleting, re-fetch and re-render the todo list
+		todos, err := loadTodos(db) // Or getFilteredTodos with current filter
+		if err != nil {
+			logger.Printf("Error reloading todos after delete: %v\n", err)
+			http.Error(w, "Failed to reload todos", http.StatusInternalServerError)
+			return
+		}
+		todo.List(todos).Render(context.Background(), w) // Re-render the todo list
 	})
 
 	// GET /todos - Filter Todos (HTMX Request)
@@ -151,8 +167,8 @@ func main() {
 			return
 		}
 
-		// *** RENDER ONLY THE CONTAINER COMPONENT ***
-		todo.Container(filteredTodos, filter).Render(context.Background(), w) // Correct
+		// *** RENDER ONLY THE TODO LIST COMPONENT ***
+		todo.List(filteredTodos).Render(context.Background(), w) // Correct: Render only the list
 	})
 
 	server := &http.Server{
