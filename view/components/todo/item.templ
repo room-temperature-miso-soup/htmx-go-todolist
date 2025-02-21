@@ -1,0 +1,42 @@
+// view/components/todo/item.templ
+package todo
+
+import "htmx-go-todolist/internal/types"
+
+templ Item(todo types.Todo) {
+	<div id={ "todo-" + todo.ID } class="collapse collapse-arrow bg-base-200 mb-2">
+		<input type="checkbox" class="peer"/>
+		<div class="collapse-title flex items-center gap-4">
+			<label class="cursor-pointer">
+				<input
+					type="checkbox"
+					checked?={ todo.Completed }
+					class="checkbox checkbox-sm checkbox-success"
+					hx-post={ "/toggle-todo/" + todo.ID }
+					hx-trigger="change"
+					hx-swap="outerHTML"
+					hx-target={ "closest div" }
+                />
+			</label>
+			<span class={ "flex-grow", templ.KV("line-through opacity-50", todo.Completed) }>{ todo.Text }</span>
+			<button
+				class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-white"
+				hx-delete={ "/delete-todo/" + todo.ID }
+				hx-trigger="click"
+				hx-target={ "closest div" }
+				hx-swap="outerHTML"
+			>
+				Delete
+			</button>
+		</div>
+		<div class="collapse-content">
+			<div class="mt-2 text-sm opacity-70">
+				<p>Created: { todo.CreatedAt.Format("Jan 02, 2006 15:04") }</p>
+				<div class="flex gap-2 mt-2">
+					<span class="badge badge-outline">Priority: { todo.Priority }</span>
+					<span class="badge badge-outline">Category: { todo.Category }</span>
+				</div>
+			</div>
+		</div>
+	</div>
+}

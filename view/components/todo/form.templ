@@ -1,0 +1,23 @@
+// view/components/todo/form.templ
+package todo
+
+templ Form() {
+    <div class="join w-full mb-6">
+        <input 
+            type="text" 
+            placeholder="Add a new task..." 
+            class="input input-bordered join-item w-full"
+            name="todoText"
+            required
+        />
+        <button 
+            class="btn btn-primary join-item"
+            hx-post="/add-todo"
+            hx-target="#todo-list"
+            hx-swap="afterbegin"
+        >
+            Add Task
+        </button>
+    </div>
+}
+

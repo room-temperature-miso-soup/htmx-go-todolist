@@ -1,0 +1,33 @@
+// layout/sidebar.templ
+package layout
+
+templ Sidebar() {
+    <div class="drawer-side">
+        <label for="drawer" class="drawer-overlay"></label>
+        <ul class="menu p-4 w-80 h-full bg-base-200 text-base-content">
+            <div class="flex flex-col h-full">
+                <div class="flex items-center gap-4 px-4 py-2">
+                    <div class="avatar placeholder">
+                        <div class="bg-neutral text-neutral-content rounded-full w-8">
+                            <span class="text-xs">JP</span>
+                        </div>
+                    </div>
+                    <span class="font-semibold">John Doe</span>
+                </div>
+                <div class="divider"></div>
+                <li><a class="active">📋 All Tasks</a></li>
+                <li><a>📅 Today</a></li>
+                <li><a>📅 Upcoming</a></li>
+                <li><a>⭐ Important</a></li>
+                <div class="divider">Categories</div>
+                <li><a>🏢 Work</a></li>
+                <li><a>🏠 Personal</a></li>
+                <li><a>🎯 Goals</a></li>
+                <div class="mt-auto">
+                    <div class="divider"></div>
+                    <li><a>⚙️ Settings</a></li>
+                </div>
+            </div>
+        </ul>
+    </div>
+}

@@ -1,0 +1,29 @@
+// view/index.templ
+package view
+
+import (
+    "htmx-go-todolist/internal/types"
+    "htmx-go-todolist/view/components/layout"
+    "htmx-go-todolist/view/components/todo"
+)
+
+templ Index(todos []types.Todo) {
+    @layout.Base() {
+        <div class="p-4 lg:p-8">
+            <div class="flex items-center justify-between mb-8">
+                <h1 class="text-2xl font-bold">My Tasks</h1>
+                <label for="drawer" class="btn btn-primary drawer-button lg:hidden">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </label>
+            </div>
+
+            <div class="max-w-3xl">
+                @todo.Form()
+                @todo.Filters()
+                @todo.List(todos)
+            </div>
+        </div>
+    }
+}
