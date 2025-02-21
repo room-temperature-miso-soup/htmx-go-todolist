@@ -1,12 +1,12 @@
 // view/components/todo/list.templ
 package todo
 
-import "htmx-go-todolist/internal/types" // Import the types package!
+import "htmx-go-todolist/internal/types"
 
 templ List(todos []types.Todo) {
-	<div id="todo-list" class="space-y-2">
-		for _, todo := range todos {
-			@Item(todo)
-		}
-	</div>
+    <ul>  // <-- Remove id="todo-list"
+        for _, todo := range todos {
+            @Item(todo)
+        }
+    </ul>
 }

@@ -1,0 +1,9 @@
+// view/components/todo/container.templ
+package todo
+
+import "htmx-go-todolist/internal/types"
+
+templ Container(todos []types.Todo, activeFilter string) {
+    @Filters(activeFilter)
+    @List(todos)
+}

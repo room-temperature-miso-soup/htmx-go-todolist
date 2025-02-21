@@ -1,10 +1,28 @@
 // view/components/todo/filters.templ
 package todo
 
-templ Filters() {
-    <div class="tabs tabs-boxed mb-6">
-        <a class="tab tab-active">All</a>
-        <a class="tab">Active</a>
-        <a class="tab">Completed</a>
-    </div>
+templ Filters(activeFilter string) {
+	<div class="tabs tabs-boxed mb-6">
+		<a
+			href="/todos?filter=all"
+			hx-get="/todos?filter=all"
+			hx-target="#todo-list"
+			hx-swap="innerHTML"
+			class={ "tab", templ.KV("tab-active", activeFilter == "all") }
+		>All</a>
+		<a
+			href="/todos?filter=active"
+			hx-get="/todos?filter=active"
+			hx-target="#todo-list"
+			hx-swap="innerHTML"
+			class={ "tab", templ.KV("tab-active", activeFilter == "active") }
+		>Active</a>
+		<a
+			href="/todos?filter=completed"
+			hx-get="/todos?filter=completed"
+			hx-target="#todo-list"
+			hx-swap="innerHTML"
+			class={ "tab", templ.KV("tab-active", activeFilter == "completed") }
+		>Completed</a>
+	</div>
 }
