@@ -35,7 +35,7 @@ func Filters(activeFilter string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 = []any{templ.Classes("btn", "btn-sm", "btn-primary", "rounded-l-md", "z-10", "text-white", "rounded-r-none")}
+		var templ_7745c5c3_Var2 = []any{templ.Classes("btn", "btn-xs", "btn-primary", "rounded-l-md", "z-10", "rounded-r-none")}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var2...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -70,7 +70,7 @@ func Filters(activeFilter string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var5 = []any{templ.Classes("btn", "btn-sm", "btn-primary", "z-20", "text-white", "rounded-none")}
+		var templ_7745c5c3_Var5 = []any{templ.Classes("btn", "btn-xs", "btn-primary", "z-20", "rounded-none")}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var5...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -105,7 +105,7 @@ func Filters(activeFilter string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var8 = []any{templ.Classes("btn", "btn-sm", "btn-primary", "rounded-r-md", "z-30", "text-white", "rounded-l-none")}
+		var templ_7745c5c3_Var8 = []any{templ.Classes("btn", "btn-xs", "btn-primary", "rounded-r-md", "z-30", "rounded-l-none")}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var8...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

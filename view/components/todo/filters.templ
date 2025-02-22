@@ -8,7 +8,7 @@ templ Filters(activeFilter string) {
                         hx-target="#todo-list"
                         hx-swap="innerHTML"
                         hx-push-url="true"
-                        class={ templ.Classes("btn", "btn-sm", "btn-primary", "rounded-l-md", "z-10", "text-white", "rounded-r-none") }
+                        class={ templ.Classes("btn", "btn-xs", "btn-primary", "rounded-l-md", "z-10", "rounded-r-none") }
                         style={ templ.Attributes{"margin-right": "-1.3px"} }
                 >
                         <span>&#x1F4C4;</span> All
@@ -18,7 +18,7 @@ templ Filters(activeFilter string) {
                         hx-target="#todo-list"
                         hx-swap="innerHTML"
                         hx-push-url="true"
-                        class={ templ.Classes("btn", "btn-sm", "btn-primary", "z-20", "text-white", "rounded-none") }
+                        class={ templ.Classes("btn", "btn-xs", "btn-primary", "z-20", "rounded-none") }
                         style={ templ.Attributes{"margin-right": "-1.3px", "margin-left": "-1.3px"} }
                 >
                         <span>&#x23F3;</span> Active
@@ -28,7 +28,7 @@ templ Filters(activeFilter string) {
                         hx-target="#todo-list"
                         hx-swap="innerHTML"
                         hx-push-url="true"
-                        class={ templ.Classes("btn", "btn-sm", "btn-primary", "rounded-r-md", "z-30", "text-white", "rounded-l-none") }
+                        class={ templ.Classes("btn", "btn-xs", "btn-primary", "rounded-r-md", "z-30", "rounded-l-none") }
                         style={ templ.Attributes{"margin-left": "-1.3px"} }
                 >
                         <span>&#x2705;</span> Completed
