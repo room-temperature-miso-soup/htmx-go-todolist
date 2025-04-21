@@ -1,4 +1,5 @@
 // main.go
+
 package main
 
 import (
@@ -28,15 +29,15 @@ func main() {
 	defer db.Close()
 
 	createTableSQL := `
-		CREATE TABLE IF NOT EXISTS todos (
-			id TEXT PRIMARY KEY,
-			text TEXT NOT NULL,
-			completed INTEGER NOT NULL,
-			created_at DATETIME NOT NULL,
-			priority TEXT,
-			category TEXT
-		);
-	`
+CREATE TABLE IF NOT EXISTS todos (
+    id TEXT PRIMARY KEY,
+    text TEXT NOT NULL,
+    completed INTEGER NOT NULL,
+    created_at DATETIME NOT NULL,
+    priority TEXT,
+    category TEXT
+);
+`
 	_, err = db.Exec(createTableSQL)
 	if err != nil {
 		logger.Fatalf("Failed to create table: %v", err)
@@ -169,6 +170,70 @@ func main() {
 
 		// *** RENDER ONLY THE TODO LIST COMPONENT ***
 		todo.List(filteredTodos).Render(context.Background(), w) // Correct: Render only the list
+	})
+
+	// GET /edit-todo/{id} - Load Edit Form
+	mux.HandleFunc("GET /edit-todo/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		field := r.URL.Query().Get("field")
+		logger.Printf("GET /edit-todo request received for ID: %s, field: %s\n", id, field)
+
+		if id == "" {
+			logger.Println("Error: ID is required")
+			http.Error(w, "ID is required", http.StatusBadRequest)
+			return
+		}
+
+		todoItem, err := getTodoByID(db, id)
+		if err != nil {
+			logger.Printf("Error getting todo for editing: %v\n", err)
+			http.Error(w, "Failed to get todo", http.StatusInternalServerError)
+			return
+		}
+
+		todo.EditForm(todoItem, field).Render(context.Background(), w)
+	})
+
+	// PUT /update-todo/{id} - Update Todo
+	mux.HandleFunc("PUT /update-todo/{id}", func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		logger.Printf("PUT /update-todo request received for ID: %s\n", id)
+
+		if err := r.ParseForm(); err != nil {
+			logger.Printf("Error parsing form: %v\n", err)
+			http.Error(w, "Failed to parse form", http.StatusBadRequest)
+			return
+		}
+
+		// Get the current todo to preserve unchanged fields
+		currentTodo, err := getTodoByID(db, id)
+		if err != nil {
+			logger.Printf("Error getting current todo: %v\n", err)
+			http.Error(w, "Failed to get current todo", http.StatusInternalServerError)
+			return
+		}
+
+		// Update only the fields that were submitted
+		if text := r.FormValue("text"); text != "" {
+			currentTodo.Text = text
+		}
+		if priority := r.FormValue("priority"); priority != "" {
+			currentTodo.Priority = priority
+		}
+		if category := r.FormValue("category"); category != "" {
+			currentTodo.Category = category
+		}
+
+		// Update in database
+		err = updateTodo(db, currentTodo)
+		if err != nil {
+			logger.Printf("Error updating todo: %v\n", err)
+			http.Error(w, "Failed to update todo", http.StatusInternalServerError)
+			return
+		}
+
+		// Render the updated todo item
+		todo.Item(currentTodo).Render(context.Background(), w)
 	})
 
 	server := &http.Server{
@@ -305,4 +370,16 @@ func getFilteredTodos(db *sql.DB, filter string) ([]types.Todo, error) {
 
 	logger.Printf("Retrieved %d todos with filter: %s\n", len(todos), filter)
 	return todos, nil
+}
+
+// Add this new database helper function
+func updateTodo(db *sql.DB, todo types.Todo) error {
+	logger.Printf("Updating todo in database: %+v\n", todo)
+	_, err := db.Exec("UPDATE todos SET text = ?, priority = ?, category = ? WHERE id = ?",
+		todo.Text, todo.Priority, todo.Category, todo.ID)
+	if err != nil {
+		logger.Printf("Error updating todo: %v\n", err)
+		return err
+	}
+	return nil
 }

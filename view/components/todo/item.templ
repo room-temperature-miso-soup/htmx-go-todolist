@@ -16,14 +16,19 @@ templ Item(todo types.Todo) {
                 hx-target={ "closest div[id]" }
             />
             
-            <span 
-                class={templ.Classes(
-                    "flex-grow cursor-pointer",
-                    templ.KV("line-through opacity-50", todo.Completed),
-                )}
-                data-details-id={ todo.ID }
-                onclick="toggleDetails(this.dataset.detailsId)"
-            >{ todo.Text }</span>
+            <div class="flex-grow">
+                <div 
+                    class={templ.Classes(
+                        "cursor-pointer",
+                        templ.KV("line-through opacity-50", todo.Completed),
+                    )}
+                    hx-get={ "/edit-todo/" + todo.ID }
+                    hx-trigger="click"
+                    hx-swap="innerHTML"
+                >
+                    { todo.Text }
+                </div>
+            </div>
             
             <button
                 class="btn btn-ghost btn-xs text-error hover:bg-error hover:text-white"
@@ -36,14 +41,74 @@ templ Item(todo types.Todo) {
             </button>
         </div>
 
-        <div id={ "details-" + todo.ID } class="hidden px-4 pb-4 border-t border-base-300">
-            <div class="mt-2 text-sm opacity-70">
-                <p>Created: { todo.CreatedAt.Format("Jan 02, 2006 15:04") }</p>
-                <div class="flex gap-2 mt-2">
+        <div class="px-4 pb-4 border-t border-base-300">
+            <div class="mt-2 text-sm space-y-2">
+                <div
+                    hx-get={ "/edit-todo/" + todo.ID + "?field=priority" }
+                    hx-trigger="click"
+                    hx-swap="innerHTML"
+                    class="cursor-pointer"
+                >
                     <span class="badge badge-outline">Priority: { todo.Priority }</span>
+                </div>
+                <div
+                    hx-get={ "/edit-todo/" + todo.ID + "?field=category" }
+                    hx-trigger="click"
+                    hx-swap="innerHTML"
+                    class="cursor-pointer"
+                >
                     <span class="badge badge-outline">Category: { todo.Category }</span>
                 </div>
+                <p class="opacity-70">Created: { todo.CreatedAt.Format("Jan 02, 2006 15:04") }</p>
             </div>
         </div>
     </div>
+}
+
+templ EditForm(todo types.Todo, field string) {
+    switch field {
+        case "text":
+            <form 
+                class="flex-grow"
+                hx-put={ "/update-todo/" + todo.ID }
+                hx-trigger="submit"
+                hx-target={ "closest div[id]" }
+                hx-swap="outerHTML"
+            >
+                <input
+                    type="text"
+                    name="text"
+                    value={ todo.Text }
+                    class="input input-sm input-bordered w-full"
+                    autofocus
+                />
+            </form>
+        case "priority":
+            <form
+                hx-put={ "/update-todo/" + todo.ID }
+                hx-trigger="change"
+                hx-target={ "closest div[id]" }
+                hx-swap="outerHTML"
+            >
+                <select name="priority" class="select select-sm select-bordered" autofocus>
+                    <option selected?={ todo.Priority == "Low" }>Low</option>
+                    <option selected?={ todo.Priority == "Medium" }>Medium</option>
+                    <option selected?={ todo.Priority == "High" }>High</option>
+                </select>
+            </form>
+        case "category":
+            <form
+                hx-put={ "/update-todo/" + todo.ID }
+                hx-trigger="change"
+                hx-target={ "closest div[id]" }
+                hx-swap="outerHTML"
+            >
+                <select name="category" class="select select-sm select-bordered" autofocus>
+                    <option selected?={ todo.Category == "Personal" }>Personal</option>
+                    <option selected?={ todo.Category == "Work" }>Work</option>
+                    <option selected?={ todo.Category == "Shopping" }>Shopping</option>
+                    <option selected?={ todo.Category == "Other" }>Other</option>
+                </select>
+            </form>
+    }
 }
